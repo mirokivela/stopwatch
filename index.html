@@ -28,10 +28,10 @@
       width: 100%;
     }
     #logo {
-      height: 50%; /* Will be adjusted dynamically via JS based on font height */
+      height: 50%;
       width: auto;
       margin-bottom: 3vh;
-      margin-top: 10vh; /* Buffer from top */
+      margin-top: 4vh;
     }
     #time {
       text-align: center;
@@ -87,7 +87,7 @@
 <body>
   <div class="container">
     <img id="logo" src="RIVERLAND INVITATIONAL 2025_W.png" alt="Logo">
-    <div id="time">00:00.0</div>
+    <div id="time">0</div>
     <div class="controls">
       <button id="startStop">START</button>
       <button id="reset">RESET</button>
@@ -128,13 +128,8 @@
     function updateTime() {
       const now = Date.now();
       const diff = elapsedTime + (running ? now - startTime : 0);
-      const minutes = Math.floor(diff / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      const tenths = Math.floor((diff % 1000) / 100);
-      timeDisplay.textContent = 
-        String(minutes).padStart(2, '0') + ":" +
-        String(seconds).padStart(2, '0') + "." +
-        tenths;
+      const seconds = (diff / 1000).toFixed(1);
+      timeDisplay.textContent = seconds;
       if(running) requestAnimationFrame(updateTime);
     }
 
@@ -186,7 +181,6 @@
       baseFontSize = fontSize - 1;
       timeDisplay.style.fontSize = baseFontSize + 'px';
 
-      // Adjust logo height to be 50% of font height
       logo.style.height = (baseFontSize * 0.5) + 'px';
       logo.style.width = 'auto';
     }
