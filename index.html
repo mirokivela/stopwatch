@@ -158,6 +158,229 @@
 
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          document.addEventListener('keydown', handleKeydown, true);
+        });
+      } else {
+        document.exitFullscreen().then(() => {
+          document.removeEventListener('keydown', handleKeydown, true);
+        });
+      }
+    }
+
+    function resizeText() {
+      const parentWidth = window.innerWidth * 0.95;
+      const parentHeight = window.innerHeight * 0.55;
+      let fontSize = 10;
+      timeDisplay.style.fontSize = fontSize + 'px';
+
+      while (timeDisplay.scrollWidth < parentWidth && timeDisplay.scrollHeight < parentHeight) {
+        fontSize++;
+        timeDisplay.style.fontSize = fontSize + 'px';
+      }
+
+      baseFontSize = fontSize - 1;
+      timeDisplay.style.fontSize = baseFontSize + 'px';
+    }
+
+    function showHint() {
+      hint.classList.remove('hidden');
+      setTimeout(() => hint.classList.add('hidden'), 4000);
+    }
+
+    function handleKeydown(e) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        startStop();
+        showHint();
+      } else if (e.key.toLowerCase() === 'r') {
+        reset();
+        showHint();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+        showHint();
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      resizeText();
+      timeDisplay.style.fontSize = baseFontSize + 'px';
+    });
+
+    startStopBtn.addEventListener('click', () => { startStop(); showHint(); });
+    resetBtn.addEventListener('click', () => { reset(); showHint(); });
+
+    document.addEventListener('keydown', handleKeydown);
+    document.addEventListener('mousemove', showHint);
+    document.addEventListener('mousedown', showHint);
+    document.addEventListener('touchstart', showHint);
+
+    resizeText();
+    updateTime();
+    showHint();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stopwatch</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(160deg, #013220, #1a1a1a);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 110vh;
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      transition: background 0.5s ease-in-out;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+    }
+    #time {
+      text-align: center;
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: white;
+    }
+    .controls {
+      margin-top: 5vh;
+      display: flex;
+      justify-content: center;
+      gap: 2vw;
+    }
+    button {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
+      border: none;
+      padding: 1vh 2vw;
+      font-size: 2.5vw;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 1vw;
+      min-width: 15vw;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.97);
+    }
+    .hint {
+      margin-top: 4vh;
+      font-size: 1.5vw;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      opacity: 1;
+      transition: opacity 0.7s ease;
+    }
+    .hint.hidden {
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="time">00:00.0</div>
+    <div class="controls">
+      <button id="startStop">START</button>
+      <button id="reset">RESET</button>
+    </div>
+    <div class="hint" id="hint">Press SPACE to Start/Pause · R to Reset · F for Fullscreen</div>
+  </div>
+
+  <script>
+    let startTime = 0;
+    let elapsedTime = 0;
+    let running = false;
+    let baseFontSize;
+    let wakeLock = null;
+
+    const timeDisplay = document.getElementById('time');
+    const startStopBtn = document.getElementById('startStop');
+    const resetBtn = document.getElementById('reset');
+    const hint = document.getElementById('hint');
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.warn('Wake Lock not supported or failed:', err);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    function updateTime() {
+      const now = Date.now();
+      const diff = elapsedTime + (running ? now - startTime : 0);
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      const tenths = Math.floor((diff % 1000) / 100);
+      timeDisplay.textContent = 
+        String(minutes).padStart(2, '0') + ":" +
+        String(seconds).padStart(2, '0') + "." +
+        tenths;
+      if(running) requestAnimationFrame(updateTime);
+    }
+
+    function startStop() {
+      if (running) {
+        elapsedTime += Date.now() - startTime;
+        running = false;
+        startStopBtn.textContent = 'START';
+        document.body.style.background = 'linear-gradient(160deg, #013220, #1a1a1a)';
+        releaseWakeLock();
+      } else {
+        startTime = Date.now();
+        running = true;
+        startStopBtn.textContent = 'PAUSE';
+        requestAnimationFrame(updateTime);
+        document.body.style.background = 'linear-gradient(160deg, #026622, #1a2a1a)';
+        requestWakeLock();
+      }
+    }
+
+    function reset() {
+      elapsedTime = 0;
+      startTime = Date.now();
+      updateTime();
+      if (!running) {
+        document.body.style.background = 'linear-gradient(160deg, #013220, #1a1a1a)';
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
       } else {
         document.exitFullscreen();
