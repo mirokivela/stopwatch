@@ -28,8 +28,8 @@
       width: 100%;
     }
     #logo {
-      max-width: 60vw;
-      height: auto;
+      height: 50%; /* Will be adjusted dynamically via JS based on font height */
+      width: auto;
       margin-bottom: 3vh;
     }
     #time {
@@ -102,6 +102,7 @@
     let wakeLock = null;
 
     const timeDisplay = document.getElementById('time');
+    const logo = document.getElementById('logo');
     const startStopBtn = document.getElementById('startStop');
     const resetBtn = document.getElementById('reset');
     const hint = document.getElementById('hint');
@@ -183,6 +184,10 @@
 
       baseFontSize = fontSize - 1;
       timeDisplay.style.fontSize = baseFontSize + 'px';
+
+      // Adjust logo height to be 50% of font height
+      logo.style.height = (baseFontSize * 0.5) + 'px';
+      logo.style.width = 'auto';
     }
 
     function showHint() {
@@ -212,7 +217,6 @@
     startStopBtn.addEventListener('click', () => { startStop(); showHint(); });
     resetBtn.addEventListener('click', () => { reset(); showHint(); });
 
-    // Attach a single global keydown listener that works even in fullscreen
     window.addEventListener('keydown', handleKeydown);
     document.addEventListener('mousemove', showHint);
     document.addEventListener('mousedown', showHint);
