@@ -158,13 +158,9 @@
 
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-          document.addEventListener('keydown', handleKeydown, true);
-        });
+        document.documentElement.requestFullscreen();
       } else {
-        document.exitFullscreen().then(() => {
-          document.removeEventListener('keydown', handleKeydown, true);
-        });
+        document.exitFullscreen();
       }
     }
 
@@ -210,7 +206,8 @@
     startStopBtn.addEventListener('click', () => { startStop(); showHint(); });
     resetBtn.addEventListener('click', () => { reset(); showHint(); });
 
-    document.addEventListener('keydown', handleKeydown);
+    // Attach a single global keydown listener that works even in fullscreen
+    window.addEventListener('keydown', handleKeydown);
     document.addEventListener('mousemove', showHint);
     document.addEventListener('mousedown', showHint);
     document.addEventListener('touchstart', showHint);
